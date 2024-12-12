@@ -19,7 +19,8 @@ const int PIN_NR_ENCODER_B = 3; // Never change these, since the interrupts are 
 
 // Constants for motor control
 const int upperLim = 1950;
-const int speed = 150;
+const int redButtLim = 850;
+const int speed = 70;
 int state = 1;
 // state 1 means calibrate, state 2 moves to blue buttons, 3 goes to red, and 4 goes to yellow. 5 means wait
 
@@ -28,7 +29,7 @@ void setup() {
   pinMode (onoffSwitchPin, INPUT);
   Serial.begin(115200);
   Serial.println("Start");
-
+  
   // For Limit Switch
   pinMode(limSwitchPin,INPUT);
 
@@ -72,25 +73,43 @@ void runMotor() {
       counterclockwise();
       if (calibrate()) {
         state = 2;
+        delay(1000);
       }
       break;
     case 2:
-      clockwise();
-      if (checkUpperLim()) {
-        state = 1;
+      if (motorPosition >= 0){
+        shutDownMotor();
+        Serial.println("You're at the FIRST BUTTON");
+        state = 3;
+        delay(1000);
+      }
+      else if (motorPosition < 0) {
+        clockwise();
       }
       break;
+    case 3:
+      if (motorPosition >= redButtLim) {
+        shutDownMotor();
+        Serial.println("You're at the SECOND BUTTON");
+        state = 4;
+        delay(1000);
+      }
+      else if (motorPosition < redButtLim) {
+        clockwise();
+      }
+    case 4:
+      if (motorPosition >= upperLim) {
+        shutDownMotor();
+        Serial.println("You're at the THIRD BUTTON");
+        state = 5;
+        delay(1000);
+      }
+      else if (motorPosition < upperLim) {
+        clockwise();
+      }
+    // case 5: // DONT USE THIS!!
+    //   shutDownMotor();
   }
-  // if (checkSwitch()) return;
-  // // Serial.println("Switch on");  
-  // if (calibrate()) { // 
-  //   clockwise();
-  // }
-  // if (checkUpperLim()) {
-  //   analogWrite(ENApin, speed);
-  //   digitalWrite(IN1pin, HIGH);
-  //   digitalWrite(IN2pin, LOW);
-  // }
 }
 
 void shutDownMotor() {
